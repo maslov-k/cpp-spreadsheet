@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+*/build*
+CMakeLists.txt.user
+/runtime
+/dist
+antlr*.jar
