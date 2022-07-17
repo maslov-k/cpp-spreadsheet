@@ -33,6 +33,6 @@
 
 */build*
 CMakeLists.txt.user
-/runtime
-/dist
+*/runtime
+*/dist
 antlr*.jar
