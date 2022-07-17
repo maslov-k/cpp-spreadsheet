@@ -2,6 +2,8 @@
 #include "formula.h"
 #include "test_runner_p.h"
 
+#include <limits>
+
 inline std::ostream& operator<<(std::ostream& output, Position pos) {
     return output << "(" << pos.row << ", " << pos.col << ")";
 }
@@ -24,7 +26,7 @@ inline std::ostream& operator<<(std::ostream& output, const CellInterface::Value
 }
 
 namespace {
-std::string ToString(FormulaError::Category category) {
+[[maybe_unused]]std::string ToString(FormulaError::Category category) {
     return std::string(FormulaError(category).ToString());
 }
 
@@ -215,6 +217,7 @@ void TestErrorDiv0() {
                  CellInterface::Value(FormulaError::Category::Div0));
 
     sheet->SetCell("A1"_pos, "=1e+200/1e-200");
+    std::cout << sheet->GetCell("A1"_pos)->GetValue();
     ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(),
                  CellInterface::Value(FormulaError::Category::Div0));
 
@@ -250,7 +253,7 @@ void TestErrorDiv0() {
 void TestEmptyCellTreatedAsZero() {
     auto sheet = CreateSheet();
     sheet->SetCell("A1"_pos, "=B2");
-    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(), CellInterface::Value(0));
+    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(), CellInterface::Value(0.0));
 }
 
 void TestFormulaInvalidPosition() {
@@ -350,6 +353,25 @@ void TestCellCircularReferences() {
 }  // namespace
 
 int main() {
+
+    // визуальный тест на корректность сохранения связей при удалении ячейки
+    {
+        auto sheet = CreateSheet();
+        sheet->SetCell("A1"_pos, "1");
+        sheet->SetCell("C2"_pos, "=A1+E3");
+        sheet->PrintValues(std::cout);
+        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+        sheet->SetCell("E3"_pos, "2");
+        sheet->PrintValues(std::cout);
+        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+        sheet->ClearCell("E3"_pos);
+        sheet->PrintValues(std::cout);
+        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+        sheet->SetCell("E3"_pos, "10");
+        sheet->PrintValues(std::cout);
+        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+    }
+
     TestRunner tr;
     RUN_TEST(tr, TestPositionAndStringConversion);
     RUN_TEST(tr, TestPositionToStringInvalid);
@@ -370,4 +392,6 @@ int main() {
     RUN_TEST(tr, TestCellReferences);
     RUN_TEST(tr, TestFormulaIncorrect);
     RUN_TEST(tr, TestCellCircularReferences);
+
+    return 0;
 }

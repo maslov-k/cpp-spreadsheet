@@ -1,25 +1,23 @@
 #pragma once
 
 #include "common.h"
-#include "formula.h"
 
-#include <functional>
-#include <unordered_set>
+#include <set>
 
 class Sheet;
 
 class Cell : public CellInterface {
 public:
     Cell(Sheet& sheet);
-    ~Cell();
+    ~Cell() override;
 
     void Set(std::string text);
     void Clear();
 
     Value GetValue() const override;
     std::string GetText() const override;
-    std::vector<Position> GetReferencedCells() const override;
 
+    std::vector<Position> GetReferencedCells() const override;
     bool IsReferenced() const;
 
 private:
@@ -28,9 +26,17 @@ private:
     class TextImpl;
     class FormulaImpl;
 
+    std::set<Cell*> parents_;
+    std::set<Cell*> children_;
+
+    void SetParents();
+    void DeleteParents();
+
+    void ClearCache();
+    void ClearChildrenCache();
+
+    void CheckCircularRef(const std::vector<Position>& parents, const Cell* root);
+
+    Sheet& sheet_;
     std::unique_ptr<Impl> impl_;
-
-    // Добавьте поля и методы для связи с таблицей, проверки циклических 
-    // зависимостей, графа зависимостей и т. д.
-
 };

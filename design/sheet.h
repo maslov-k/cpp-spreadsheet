@@ -4,10 +4,35 @@
 #include "common.h"
 
 #include <functional>
+#include <unordered_map>
+#include <set>
+
+class Sheet;
+
+class Row {
+public:
+    void SetCell(size_t col, std::string text, Sheet& sheet);
+
+    CellInterface* operator[](size_t col);
+    const CellInterface* operator[](size_t col) const;
+
+    void Clear(size_t col);
+
+    void PrintValues(std::ostream& output, size_t cells_count) const;
+    void PrintTexts(std::ostream& output, size_t cells_count) const;
+
+    static void PrintEmptyRow(std::ostream& output, size_t cells_count);
+
+    size_t Size() const;
+
+private:
+    std::unordered_map<size_t, std::unique_ptr<Cell>> row_;
+    std::set<size_t> non_empty_cells_;
+};
 
 class Sheet : public SheetInterface {
 public:
-    ~Sheet();
+    ~Sheet() = default;
 
     void SetCell(Position pos, std::string text) override;
 
@@ -21,14 +46,11 @@ public:
     void PrintValues(std::ostream& output) const override;
     void PrintTexts(std::ostream& output) const override;
 
-    const Cell* GetConcreteCell(Position pos) const;
-    Cell* GetConcreteCell(Position pos);
+    Cell* GetCellOrCreate(Position pos);
 
 private:
-    void MaybeIncreaseSizeToIncludePosition(Position pos);
-    void PrintCells(std::ostream& output,
-                    const std::function<void(const CellInterface&)>& printCell) const;
-    Size GetActualSize() const;
+    void CheckPosition(Position pos) const;
 
-    std::vector<std::vector<std::unique_ptr<Cell>>> cells_;
+    std::unordered_map<size_t, Row> rows_;
+    std::set<size_t> non_empty_rows_;
 };
